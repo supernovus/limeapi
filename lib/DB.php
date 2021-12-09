@@ -6,6 +6,8 @@ use \Lum\DB\PDO\Simple;
 
 class DB
 {
+  use ErrorHandler;
+
   protected $db;
 
   protected $debug = false;
@@ -20,6 +22,8 @@ class DB
 
   protected $table_timing_prefix = 'survey_';
   protected $table_timing_suffix = '_timings';
+
+  protected $error_template = 'LimeAPI\DB error: ';
 
   /**
    * Build a new LimeAPI\DB object.
@@ -68,6 +72,11 @@ class DB
     else
     {
       throw new \Exception("DB needs one of 'db' or 'dbconf' parameters.");
+    }
+
+    if (isset($opts['error_handler']))
+    {
+      $this->set_error_handler($opts['error_handler']);
     }
 
     if (isset($opts['table_prefix']) && is_string($opts['table_prefix']))

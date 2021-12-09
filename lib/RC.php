@@ -9,12 +9,15 @@ namespace LimeAPI;
  */
 class RC
 {
+  use ErrorHandler;
+
   public $client;
 
   private $session_key;
   private $apiuser;
   private $apipass;
-  private $error_handler;
+
+  protected $error_template = 'LimeAPI\RC error: ';
 
   const VALID_METHODS =
   [
@@ -52,17 +55,10 @@ class RC
       unset($opts['apipass']);
     }
 
-    if (isset($opts['error_handler']) && is_callable($opts['error_handler']))
+    if (isset($opts['error_handler']))
     {
-      $this->error_handler = $opts['error_handler'];
+      $this->set_error_handler($opts['error_handler']);
       unset($opts['error_handler']);
-    }
-    else
-    {
-      $this->error_handler = function ($obj)
-      {
-        throw new \Exception("RCAPI encountered an error: ".json_encode($obj));
-      };
     }
 
     $this->client  = new \Lum\JSON\RPC\Client($opts);
@@ -93,7 +89,7 @@ class RC
     }
     else
     {
-      return $this->error_handler(['get_session_key'=>$res]);
+      return $this->handle_error(['get_session_key'=>$res]);
     }
   }
 
@@ -158,7 +154,7 @@ class RC
         }
         else
         { // Fatal error cannot continue.
-          return $this->error_handler(['export_responses'=>'could not detect delimiter']);
+          return $this->handle_error(['export_responses'=>'could not detect delimiter']);
         }
       }
 
@@ -173,7 +169,7 @@ class RC
     }
     elseif (!isset($opts['fatal']) || $opts['fatal'])
     {
-      return $this->error_handler(['export_responses'=>$responses]);
+      return $this->handle_error(['export_responses'=>$responses]);
     }
     elseif (isset($opts['return_error']) && $opts['return_error'])
     {
@@ -418,14 +414,14 @@ class RC
    */
   public function __call ($method, $args)
   {
-    if ($method == 'error_handler')
+    if ($method == 'handle_error')
     { // Work around some odd behaviour.
-      $errhand = $this->error_handler;
+      $errhand = $this->handle_error;
       return call_user_func_array($errhand, $args);
     }
     elseif (!in_array($method, self::VALID_METHODS))
     { // Invalid method, we can't continue.
-      return $this->error_handler(
+      return $this->handle_error(
       [
         "code"   => "invalid_method", 
         "msg"    => "An invalid API call was made",
@@ -441,7 +437,7 @@ class RC
       }
       else
       {
-        return $this->error_handler(
+        return $this->handle_error(
         [
           "code" => "no_auth", 
           "msg"  => "No API user or pass was specified."
@@ -457,7 +453,7 @@ class RC
     }
     else
     {
-      return $this->error_handler(
+      return $this->handle_error(
       [
         "code"     => "api_error",
         "msg"      => "The API returned a non-successful response.",
