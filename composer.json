@@ -12,10 +12,10 @@
   ],
   "require":
   {
-    "lum/lum-compat": "^1.0",
-    "lum/lum-core": "^1.7.0",
-    "lum/lum-json-rpc": "^1.0.1",
-    "lum/lum-db": "^1.8.1",
+    "lum/lum-compat": "^2.0",
+    "lum/lum-core": "^2.0",
+    "lum/lum-json-rpc": "^2.0",
+    "lum/lum-db": "^2.0",
     "parsecsv/php-parsecsv": "^1.3.2",
     "ext-PDO": "*"
   },
@@ -30,7 +30,7 @@
   {
     "branch-alias":
     {
-      "dev-main": "1.x-dev"
+      "dev-main": "2.x-dev"
     }
   }
 }
