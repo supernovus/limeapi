@@ -12,6 +12,7 @@
   ],
   "require":
   {
+    "lum/lum-compat": "^1.0",
     "lum/lum-core": "^1.7.0",
     "lum/lum-json-rpc": "^1.0.1",
     "lum/lum-db": "^1.8.1",
