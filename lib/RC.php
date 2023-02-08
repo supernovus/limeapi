@@ -192,38 +192,18 @@ class RC
       ? $opts['ignore_blanks']
       : true;
 
+    $access = new AccessList($opts);
+
     $qdata = [];
     foreach ($csvdata as $record)
     {
       foreach ($record as $qname => $qval)
       {
         $qcol = explode('[', $qname)[0];
-        if (isset($opts['whitelist']))
-        {
-          $whitelist = $opts['whitelist'];
-          if (is_array($whitelist))
-          { // An array of names.
-            if (!in_array($qcol, $whitelist)) continue;
-          }
-          elseif (is_string($whitelist))
-          { // A regular expression.
-            if (!preg_match($whitelist, $qcol)) continue;
-          }
-        }
-        if (isset($opts['blacklist']))
-        {
-          $blacklist = $opts['blacklist'];
-          if (is_array($blacklist))
-          {
-            if (in_array($qcol, $blacklist)) continue;
-          }
-          elseif (is_string($blacklist))
-          {
-            if (preg_match($blacklist, $qcol)) continue;
-          }
-        }
-  
+
         if ($ignore_blanks && trim($qval) == '') continue; // skip blanks.
+
+        if (!$access->ok($qcol)) continue; // Access list says no.
   
         if (isset($qdata[$qname]))
         {
@@ -414,12 +394,7 @@ class RC
    */
   public function __call ($method, $args)
   {
-    if ($method == 'handle_error')
-    { // Work around some odd behaviour.
-      $errhand = $this->handle_error;
-      return call_user_func_array($errhand, $args);
-    }
-    elseif (!in_array($method, self::VALID_METHODS))
+    if (!in_array($method, self::VALID_METHODS))
     { // Invalid method, we can't continue.
       return $this->handle_error(
       [

@@ -169,10 +169,7 @@ class Model
     else
     {
       $timings = $this->dbapi->get_timings($sid, $opts);
-      if (isset($this->cache))
-      {
-        $this->cache([$sid, 'z', $r, $c], $timings);
-      }
+      $this->cache([$sid, 'z', $r, $c], $timings);
       return $timings;
     }
   }
@@ -188,10 +185,7 @@ class Model
     else
     {
       $responses = $this->wsapi->export_responses_csv($sid, $opts);
-      if (isset($this->cache))
-      {
-        $this->cache([$sid, 'r', $c], $responses);
-      }
+      $this->cache([$sid, 'r', $c], $responses);
       return $responses;
     }
   }

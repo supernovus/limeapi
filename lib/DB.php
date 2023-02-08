@@ -159,49 +159,11 @@ class DB
     $table = $this->table_questions;
     $questions = $this->db->select($table, $select)->fetchAll();
 
-    // If there's an allowed list, filter the questions now.
-    if (isset($opts['allowed']))
-    {
-      $allowed = $opts['allowed'];
-      if (is_array($allowed))
-      {
-        $questions = array_filter($questions, function ($question) 
-          use ($allowed)
-        {
-          if (in_array($question['title'], $allowed)) return true;
-        });
-      }
-      elseif (is_string($allowed))
-      {
-        $questions = array_filter($questions, function ($question)
-          use ($allowed)
-        {
-          if (preg_match($allowed, $question['title'])) return true;
-        });
-      }
-    }
-
-    // The same goes for a blocked list.
-    if (isset($opts['blocked']))
-    {
-      $blocked = $opts['blocked'];
-      if (is_array($blocked))
-      {
-        $questions = array_filter($questions, function ($question) 
-          use ($blocked)
-        {
-          if (!in_array($question['title'], $blocked)) return true;
-        });
-      }
-      elseif (is_string($blocked))
-      {
-        $questions = array_filter($questions, function ($question)
-          use ($blocked)
-        {
-          if (!preg_match($blocked, $question['title'])) return true;
-        });
-      }
-    }
+    $access = new AccessList($opts);
+    $questions = array_filter($questions, function($question) use ($access)
+    { // Filter the questions with the access list.
+      return $access->ok($question['title']);
+    });
 
     // Now get nested questions and answers.
     $this->get_nested($sid, $questions);
