@@ -162,9 +162,20 @@ class RC
       $csvparse->delimiter = $delim;
       $csvparse->parse($responses);
       $responses = $csvparse->data;
-#      error_log("CSV returned: ".json_encode($responses));
-#      if (isset($responses, $responses[0]))
-#        error_log("CSV has keys: ".json_encode(array_keys($responses[0])));
+      #error_log("CSV returned: ".json_encode($responses));
+      if (isset($responses) && count($responses) > 0)
+      {
+        #if (isset($responses[0]))
+        #  error_log("CSV has keys: ".json_encode(array_keys($responses[0])));
+
+        // If the last entry has a blank 'id', nuke it.
+        $li = array_key_last($responses);
+        $lv = $responses[$li];
+        if (!isset($lv['id']) || $lv['id'] == '')
+        {
+          array_pop($responses);
+        }
+      }
       return $responses;
     }
     elseif (!isset($opts['fatal']) || $opts['fatal'])
