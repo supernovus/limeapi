@@ -272,7 +272,7 @@ class DB
     $tp = $this->table_timing_prefix;
     $ts = $this->table_timing_suffix;
 
-    $table = "${tp}{$sid}${ts}";
+    $table = "{$tp}{$sid}{$ts}";
     $select = [];
     if (isset($rid))
     {
