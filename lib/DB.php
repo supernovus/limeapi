@@ -8,6 +8,12 @@ class DB
 {
   use ErrorHandler;
 
+  const TABLE_PROPS =
+  [
+    'surveys', 'questions', 'answers', 'labels', 'labelsets', 'groups',
+    'qattrs', 'slang', 'glang', 'qlang', 'alang',
+  ];
+
   protected $db;
 
   protected $debug = false;
@@ -19,6 +25,10 @@ class DB
   protected $table_lsets     = 'labelsets';
   protected $table_groups    = 'groups';
   protected $table_qattrs    = 'question_attributes';
+  protected $table_slang     = 'surveys_languagesettings';
+  protected $table_glang     = 'group_l10ns';
+  protected $table_qlang     = 'question_l10ns';
+  protected $table_alang     = 'answer_l10ns';
 
   protected $table_timing_prefix = 'survey_';
   protected $table_timing_suffix = '_timings';
@@ -53,10 +63,14 @@ class DB
    *
    * The following Limesurvey tables are reserved for future use:
    *
-   *  "labels_table"    (string)  Labels.          ['labels']
-   *  "lsets_table"     (string)  Label Sets.      ['labelsets']
-   *  "groups_table"    (string)  Groups.          ['groups']
-   *  "qattrs_table"    (string)  Question Attrs.  ['question_attributes']
+   *  "labels_table"    (string)  Labels           ['labels']
+   *  "lsets_table"     (string)  Label Sets       ['labelsets']
+   *  "groups_table"    (string)  Groups           ['groups']
+   *  "qattrs_table"    (string)  Question Attrs   ['question_attributes']
+   *  "slang_table"     (string)  Survey language  ['surveys_languagesettings']
+   *  "glang_table"     (string)  Group language   ['group_l10ns']
+   *  "qlang_table"     (string)  Question lang    ['question_l10ns']
+   *  "alang_table"     (string)  Answer lang      ['answer_l10ns']
    *
    */
   public function __construct ($opts)
@@ -88,11 +102,7 @@ class DB
       $prefix = '';
     }
 
-    $tables = 
-    [
-      'surveys','questions','answers','labels','lsets','groups','qattrs',
-    ];
-    foreach ($tables as $tid)
+    foreach (self::TABLE_PROPS as $tid)
     {
       $topt  = $tid.'_table';
       $tprop = 'table_'.$tid;

@@ -5,7 +5,7 @@ namespace LimeAPI;
 /**
  * An all-in-one wrapper around the DB and RC libraries.
  */
-class Model
+class Helper
 {
   use \Lum\Meta\Cache;
 

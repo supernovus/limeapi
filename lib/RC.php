@@ -11,22 +11,15 @@ class RC
 {
   use ErrorHandler;
 
-  public $client;
-
-  private $session_key;
-  private $apiuser;
-  private $apipass;
-
-  protected $error_template = 'LimeAPI\RC error: ';
-
   const VALID_METHODS =
   [
     'activate_survey', 'activate_tokens', 'add_group', 'add_language',
     'add_participants', 'add_response', 'add_survey', 'copy_survey',
     'cpd_importParticipants', 'delete_group', 'delete_language',
-    'delete_participants', 'delete_question', 'delete_survey',
-    'export_responses', 'export_responses_by_token', 'export_statistics',
-    'export_timeline', 'get_group_properties', 'get_language_properties',
+    'delete_participants', 'delete_question', 'delete_response', 
+    'delete_survey', 'export_responses', 'export_responses_by_token', 
+    'export_statistics', 'export_timeline', 'get_fieldmap',
+    'get_group_properties', 'get_language_properties',
     'get_participant_properties', 'get_question_properties',
     'get_response_ids', 'get_site_settings', 'get_summary',
     'get_survey_properties', 'get_uploaded_files', 'import_group',
@@ -35,8 +28,17 @@ class RC
     'list_users', 'mail_registered_participants', 'remind_participants',
     'set_group_properties', 'set_language_properties', 
     'set_participant_properties', 'set_question_properties',
-    'set_quota_properties', 'update_response', 'upload_file',
+    'set_quota_properties', 'set_survey_properties', 'update_response', 
+    'upload_file',
   ];
+
+  public $client;
+
+  private $session_key;
+  private $apiuser;
+  private $apipass;
+
+  protected $error_template = 'LimeAPI\RC error: ';
 
   /**
    * Build a RCAPI object.
