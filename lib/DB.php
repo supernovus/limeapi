@@ -52,14 +52,16 @@ class DB
    *
    * Options to override the defaults for the names of Limesurvey tables:
    *
-   *  "table_prefix"    (string)  Prefix to add to ALL tables.  ['']
+   *  "table_prefix"    (string)  Prefix to add to ALL tables  ['']
    *
-   *  "surveys_table"   (string)  Surveys.      ['surveys']
-   *  "questions_table" (string)  Questions.    ['questions']
-   *  "answers_table"   (string)  Answers.      ['answers']
+   *  "surveys_table"   (string)  Surveys         ['surveys']
+   *  "questions_table" (string)  Questions       ['questions']
+   *  "answers_table"   (string)  Answers         ['answers']
+   *  "qlang_table"     (string)  Question langs  ['question_l10ns']
+   *  "alang_table"     (string)  Answer langs    ['answer_l10ns']
    *
-   *  "timing_prefix"   (string)  Timing table prefix.  ['survey_']
-   *  "timing_suffix"   (string)  Timing table suffix.  ['_timings']
+   *  "timing_prefix"   (string)  Timing table prefix  ['survey_']
+   *  "timing_suffix"   (string)  Timing table suffix  ['_timings']
    *
    * The following Limesurvey tables are reserved for future use:
    *
@@ -69,8 +71,6 @@ class DB
    *  "qattrs_table"    (string)  Question Attrs   ['question_attributes']
    *  "slang_table"     (string)  Survey language  ['surveys_languagesettings']
    *  "glang_table"     (string)  Group language   ['group_l10ns']
-   *  "qlang_table"     (string)  Question lang    ['question_l10ns']
-   *  "alang_table"     (string)  Answer lang      ['answer_l10ns']
    *
    */
   public function __construct ($opts)
@@ -107,8 +107,13 @@ class DB
       $topt  = $tid.'_table';
       $tprop = 'table_'.$tid;
       if (isset($opts[$topt]) && is_string($opts[$topt]))
-      {
+      { // Set a custom table name.
         $this->$tprop = $prefix.$opts[$topt];
+      }
+      else if (!empty($prefix))
+      { // Prefix default values with the prefix.
+        $tname = $this->$tprop;
+        $this->$tprop = $prefix.$tname;
       }
     }
 
@@ -145,19 +150,34 @@ class DB
    *
    *  "allowed"   (array|string)  The table names that we want to include.
    *
-   *    May be an array of exact table names, or a string which will be
-   *    compiled into a regular expression to match the table names.
+   *  May be an array of exact table names, or a string which will be
+   *  compiled into a regular expression to match the table names.
    *
    *  "blocked"   (array|string)  The table names that we want to exclude.
    *
-   *    Supports the same values as the allowed list.
+   *  Supports the same values as the allowed list.
+   * 
+   *  "no_refs" (boolean)  Strip _reference_ properties?
+   * 
+   *  If `true` then some reference properties for nested data structures
+   *  will be removed. Namely:
+   * 
+   *  - `sid` and `parent_qid` will be removed from `questions`.
+   *  - `qid` will be removed from `answers` and `question.strings`.
+   *  - `aid` will be removed from `answer.strings`.
    *
    * @return array  An array of question definitions (associative arrays).
    *
-   *   In addition to the regular question columns, there may be an "answers"
-   *   property containing an array of answers rows that were children of the
-   *   question. There may also be a "subquestions" property which will be
-   *   an array of questions that are children of the main question.
+   * In addition to the regular question columns, there may be an "answers"
+   * property containing an array of answers rows that were children of the
+   * question. There may also be a "subquestions" property which will be
+   * an array of questions that are children of the main question.
+   * 
+   * In newer versions of Limesurvey there will be a "strings" property
+   * containing an array of question translation string rows.
+   * In the same versions, each of the answer rows will also have a 
+   * "strings" property: an array of answer translation string rows.
+   * 
    */
   public function get_questions ($sid, $opts=[])
   {
@@ -176,7 +196,7 @@ class DB
     });
 
     // Now get nested questions and answers.
-    $this->get_nested($sid, $questions);
+    $this->get_nested($sid, $questions, $opts);
 
     // Handle debug information.
     if (is_bool($this->debug) && $this->debug)
@@ -193,8 +213,10 @@ class DB
   }
 
   // Never called directly, this is part of get_questions();
-  protected function get_nested ($sid, &$questions)
+  protected function get_nested ($sid, &$questions, $opts)
   {
+    $strip = $opts['no_refs'] ?? false;
+
     // First, sort the questions using natural sorting.
     usort($questions, function ($a, $b)
     {
@@ -203,10 +225,36 @@ class DB
 
     $tq = $this->table_questions;
     $ta = $this->table_answers;
+    $tql = $this->table_qlang;
+    $tal = $this->table_alang;
 
     // Now let's find any sub-questions and answer defintions.
     foreach ($questions as &$question)
     {
+      if ($strip)
+      {
+        unset($question['sid'], $question['parent_qid']);
+      }
+
+      $select = 
+      [
+        'where' => ['qid'=>$question['qid']],
+      ];
+
+      $qlangs = $this->db->select($tql, $select)->fetchAll();
+      if (count($qlangs) > 0)
+      {
+        if ($strip)
+        {
+          foreach ($qlangs as &$qlang)
+          {
+            unset($qlang['qid']);
+          }
+        }
+
+        $question['strings'] = $qlangs;
+      }
+
       $select =
       [
         'where' => ['sid'=>$sid, 'parent_qid'=>$question['qid']],
@@ -215,9 +263,10 @@ class DB
       $subquestions = $this->db->select($tq, $select)->fetchAll();
       if (count($subquestions) > 0)
       {
-        $this->get_nested($sid, $subquestions);
+        $this->get_nested($sid, $subquestions, $opts);
         $question['subquestions'] = $subquestions;
       }
+
       $select =
       [
         'where' => ['qid'=>$question['qid']],
@@ -239,8 +288,35 @@ class DB
         {
           return strnatcasecmp($a[$sort], $b[$sort]);
         });
-        $question['answers'] = $answers;
 
+        foreach ($answers as &$answer)
+        {
+          if ($strip)
+          {
+            unset($answer['qid']);
+          }
+
+          $select = 
+          [
+            'where' => ['aid'=>$answer['aid']],
+          ];
+
+          $alangs = $this->db->select($tal, $select)->fetchAll();
+          if (count($alangs) > 0)
+          {
+            if ($strip)
+            {
+              foreach ($alangs as &$alang)
+              {
+                unset($alang['aid']);
+              }
+            }
+    
+            $answer['strings'] = $alangs;
+          }
+        }
+
+        $question['answers'] = $answers;
       }
     }
   }

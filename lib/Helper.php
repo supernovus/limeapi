@@ -99,6 +99,7 @@ class Helper
     { // It's an sid instead of a questions array.
       $qspec = $this->get_questions($qspec);
     }
+
     if (is_array($qspec))
     { // We have our list of questions.
       $subquery = null;
@@ -111,6 +112,7 @@ class Helper
           $subquery = $subquery[0];
         }
       }
+
       foreach ($qspec as $question)
       {
         if ($question['title'] == $qpath)
@@ -145,6 +147,7 @@ class Helper
         return;
       }
     }
+    
     if (is_array($question) && isset($question['answers']))
     {
       foreach ($question['answers'] as $answer)
