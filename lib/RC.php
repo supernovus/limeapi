@@ -251,6 +251,7 @@ class RC
         }
       }
     }
+    
     foreach ($qdata as $qname => &$qdef)
     {
       $total = $qdef['count'];

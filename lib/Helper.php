@@ -2,6 +2,8 @@
 
 namespace LimeAPI;
 
+use LimeAPI\Helper\Questions;
+
 /**
  * An all-in-one wrapper around the DB and RC libraries.
  */
@@ -91,6 +93,11 @@ class Helper
       $this->cache([$sid, 'q'], $questions);
       return $questions;
     }
+  }
+
+  public function getQuestions(mixed $qspec, array $opts=[]): Questions
+  {
+    return new Questions($this, $qspec, $opts);
   }
 
   public function getQuestion ($qspec, $qpath)
